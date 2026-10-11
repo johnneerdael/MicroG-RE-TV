@@ -45,6 +45,8 @@ public class AuthManager {
     private Account account;
     private String packageSignature;
     private String accountType;
+    // MicroG RE TV: identity to request tokens as for a trusted caller (see TrustedCallerIdentity)
+    private TrustedCallerIdentity.Identity trustedIdentity;
 
 
     private int delegationType;
@@ -99,6 +101,25 @@ public class AuthManager {
         return packageSignature;
     }
 
+    /**
+     * Requests tokens as the official app chosen by {@link TrustedCallerIdentity}, if the rule
+     * applies to this caller and service.
+     *
+     * @param requestedPackage the app to act as, from the request options (may be null)
+     */
+    public void applyTrustedCallerIdentity(String requestedPackage) {
+        trustedIdentity = TrustedCallerIdentity.resolve(packageName, requestedPackage, service);
+    }
+
+    public TrustedCallerIdentity.Identity getTrustedIdentity() {
+        return trustedIdentity;
+    }
+
+    // "Trust Google for app permissions" never covers acting as another app: that needs consent
+    private boolean isTrustGoogleApplicable() {
+        return trustedIdentity == null && isTrustGooglePermitted(context);
+    }
+
     public String buildTokenKey(String service) {
         Uri.Builder builder = Uri.EMPTY.buildUpon();
 
@@ -109,6 +130,10 @@ public class AuthManager {
         if (includeEmail != null) builder.appendQueryParameter("include_email", includeEmail);
         if (includeProfile != null) builder.appendQueryParameter("include_profile", includeProfile);
         String query = builder.build().getEncodedQuery();
+        if (trustedIdentity != null) {
+            // Per acted-as app, and independent of the caller's own (changeable) certificate
+            return packageName + "@" + trustedIdentity.getPackageName() + ":" + trustedIdentity.getSignature() + ":" + service + (query != null ? ("?" + query) : "");
+        }
         return packageName + ":" + getPackageSignature() + ":" + service + (query != null ? ("?" + query) : "");
     }
 
@@ -322,7 +347,7 @@ public class AuthManager {
             response.accountId = response.auth = getAccountManager().getUserData(getAccount(), "GoogleUserId");
             return response;
         }
-        if (isPermitted() || isTrustGooglePermitted(context)) {
+        if (isPermitted() || isTrustGoogleApplicable()) {
             String token = getAuthToken();
             if (token != null && !forceRefreshToken) {
                 AuthResponse response = new AuthResponse();
@@ -339,7 +364,8 @@ public class AuthManager {
                 .source("android")
                 // Resolve metadata from the installed package before using its remote alias.
                 // getPackageSignature() already handles spoof metadata and explicit overrides.
-                .app(PackageSpoofUtils.spoofPackageName(context.getPackageManager(), packageName), getPackageSignature())
+                .app(trustedIdentity != null ? trustedIdentity.getPackageName() : PackageSpoofUtils.spoofPackageName(context.getPackageManager(), packageName),
+                        trustedIdentity != null ? trustedIdentity.getSignature() : getPackageSignature())
                 .email(accountName)
                 .token(getAccountManager().getPassword(getAccount()))
                 .service(service)
@@ -363,7 +389,7 @@ public class AuthManager {
             request.callerIsApp();
         }
         AuthResponse response = request.getResponse();
-        if (!isPermitted() && !isTrustGooglePermitted(context)) {
+        if (!isPermitted() && !isTrustGoogleApplicable()) {
             response.auth = null;
         } else {
             storeResponse(response);

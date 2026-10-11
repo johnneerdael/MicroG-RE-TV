@@ -138,6 +138,8 @@ public class AskPermissionActivity extends AccountAuthenticatorActivity {
         nm.cancel(data.packageName.hashCode());
 
         authManager = new AuthManager(this, data.accountName, data.packageName, data.service);
+        // The request options travel along in the intent extras
+        authManager.applyTrustedCallerIdentity(getIntent().getStringExtra(TrustedCallerIdentity.KEY_IDENTITY));
 
         Bitmap profileIcon = PeopleManager.getOwnerAvatarBitmap(this, data.accountName, false);
 
@@ -152,7 +154,10 @@ public class AskPermissionActivity extends AccountAuthenticatorActivity {
         }
 
         ((ImageView) findViewById(R.id.app_icon)).setImageDrawable(data.appIcon);
-        if (isOAuth()) {
+        TrustedCallerIdentity.Identity trustedIdentity = authManager.getTrustedIdentity();
+        if (trustedIdentity != null) {
+            ((TextView) findViewById(R.id.title)).setText(getString(R.string.ask_trusted_identity_title, data.appLabel, trustedIdentity.getLabel()));
+        } else if (isOAuth()) {
             ((TextView) findViewById(R.id.title)).setText(getString(R.string.ask_scope_permission_title, data.appLabel));
         } else {
             ((TextView) findViewById(R.id.title)).setText(getString(R.string.ask_service_permission_title, data.appLabel));
@@ -160,6 +165,9 @@ public class AskPermissionActivity extends AccountAuthenticatorActivity {
         findViewById(android.R.id.button1).setOnClickListener(v -> onAllow());
         findViewById(android.R.id.button2).setOnClickListener(v -> onDeny());
         ((ListView) findViewById(R.id.permissions)).setAdapter(new PermissionAdapter());
+        // D-pad (Android TV): start on the safe choice
+        View deny = findViewById(android.R.id.button2);
+        if (!deny.isInTouchMode()) deny.requestFocus();
     }
 
     public void onAllow() {

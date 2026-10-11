@@ -137,6 +137,7 @@ public class AuthManagerServiceImpl extends IAuthManagerService.Stub {
         scope = scope.replace("https://www.googleapis.com/auth/identity.plus.page.impersonation ", "");
 
         AuthManager authManager = new AuthManager(context, account.name, packageName, scope);
+        authManager.applyTrustedCallerIdentity(extras.getString(TrustedCallerIdentity.KEY_IDENTITY));
         if (extras.containsKey(KEY_DELEGATION_TYPE) && extras.getInt(KEY_DELEGATION_TYPE) != 0 ) {
             authManager.setDelegation(extras.getInt(KEY_DELEGATION_TYPE), extras.getString("delegatee_user_id"));
         }

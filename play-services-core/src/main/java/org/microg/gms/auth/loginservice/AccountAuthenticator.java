@@ -111,7 +111,13 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
             result.putInt(KEY_ERROR_CODE, ERROR_CODE_BAD_REQUEST);
             return result;
         }
-        if (options.containsKey(KEY_OVERRIDE_PACKAGE) || options.containsKey(KEY_OVERRIDE_CERTIFICATE)) {
+        TrustedCallerIdentity.Identity trustedIdentity =
+                TrustedCallerIdentity.resolve(app, options.getString(TrustedCallerIdentity.KEY_IDENTITY), authTokenType);
+        if (trustedIdentity != null) {
+            // MicroG RE TV: built-in identity for a trusted caller; consent is asked below
+            authManager = new AuthManager(context, account.name, app, authTokenType);
+            authManager.applyTrustedCallerIdentity(options.getString(TrustedCallerIdentity.KEY_IDENTITY));
+        } else if (options.containsKey(KEY_OVERRIDE_PACKAGE) || options.containsKey(KEY_OVERRIDE_CERTIFICATE)) {
             String overridePackage = options.getString(KEY_OVERRIDE_PACKAGE, app);
             byte[] overrideCertificateBytes = options.getByteArray(KEY_OVERRIDE_CERTIFICATE);
             CertData overrideCert;

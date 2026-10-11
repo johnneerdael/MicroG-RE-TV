@@ -23,6 +23,7 @@ Your data will not be lost"</string>
     <string name="google_account_label" translatable="false">Google</string>
     <string name="ask_permission_tos">By continuing, you allow this app and Google to use your information in accordance with their respective terms of service and privacy policies.</string>
     <string name="ask_scope_permission_title"><xliff:g example="F-Droid">%1$s</xliff:g> would like to:</string>
+    <string name="ask_trusted_identity_title"><xliff:g example="Milkbeat">%1$s</xliff:g> would like to use your account as <xliff:g example="YouTube Music">%2$s</xliff:g> to:</string>
     <string name="ask_service_permission_title"><xliff:g example="F-Droid">%1$s</xliff:g> would like to use:</string>
     <string name="account_manager_title">Google Account Manager</string>
     <string name="sorry">Sorry…</string>
