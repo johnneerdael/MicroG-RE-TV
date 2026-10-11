@@ -15,8 +15,10 @@ package org.microg.gms.auth
  *   signed with a different key keep working.
  * - Only YouTube scopes qualify; any other request keeps the caller's own identity.
  * - The app to act as is chosen with the request option [KEY_IDENTITY] (YouTube Music when absent).
- * - The user always confirms once per account and identity: the "Trust Google" shortcut does
- *   not apply to these requests.
+ * - Consent works as for any other app: with "Trust Google for app permissions" on (the default)
+ *   the token is issued silently, so picking the account in Android's account chooser is the only
+ *   explicit step. Since the caller is matched by package name only, an app installed under
+ *   Milkbeat's package name would get the same tokens once the user picks an account for it.
  */
 object TrustedCallerIdentity {
     const val MILKBEAT_PACKAGE = "nl.neerdael.milkbeat"

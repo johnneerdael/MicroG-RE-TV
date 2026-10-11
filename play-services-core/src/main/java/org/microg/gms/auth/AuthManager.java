@@ -115,11 +115,6 @@ public class AuthManager {
         return trustedIdentity;
     }
 
-    // "Trust Google for app permissions" never covers acting as another app: that needs consent
-    private boolean isTrustGoogleApplicable() {
-        return trustedIdentity == null && isTrustGooglePermitted(context);
-    }
-
     public String buildTokenKey(String service) {
         Uri.Builder builder = Uri.EMPTY.buildUpon();
 
@@ -347,7 +342,7 @@ public class AuthManager {
             response.accountId = response.auth = getAccountManager().getUserData(getAccount(), "GoogleUserId");
             return response;
         }
-        if (isPermitted() || isTrustGoogleApplicable()) {
+        if (isPermitted() || isTrustGooglePermitted(context)) {
             String token = getAuthToken();
             if (token != null && !forceRefreshToken) {
                 AuthResponse response = new AuthResponse();
@@ -389,7 +384,7 @@ public class AuthManager {
             request.callerIsApp();
         }
         AuthResponse response = request.getResponse();
-        if (!isPermitted() && !isTrustGoogleApplicable()) {
+        if (!isPermitted() && !isTrustGooglePermitted(context)) {
             response.auth = null;
         } else {
             storeResponse(response);

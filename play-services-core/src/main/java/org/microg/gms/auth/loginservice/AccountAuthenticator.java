@@ -114,7 +114,7 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
         TrustedCallerIdentity.Identity trustedIdentity =
                 TrustedCallerIdentity.resolve(app, options.getString(TrustedCallerIdentity.KEY_IDENTITY), authTokenType);
         if (trustedIdentity != null) {
-            // MicroG RE TV: built-in identity for a trusted caller; consent is asked below
+            // MicroG RE TV: built-in identity for a trusted caller; consent follows "Trust Google" below
             authManager = new AuthManager(context, account.name, app, authTokenType);
             authManager.applyTrustedCallerIdentity(options.getString(TrustedCallerIdentity.KEY_IDENTITY));
         } else if (options.containsKey(KEY_OVERRIDE_PACKAGE) || options.containsKey(KEY_OVERRIDE_CERTIFICATE)) {
