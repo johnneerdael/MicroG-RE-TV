@@ -1,8 +1,9 @@
 name: Release (Android TV)
 
-# Builds, signs and publishes the MicroG RE TV universal APKs (launcher icon and no-icon) as a
-# GitHub release. The in-app updater (AppUpdater) reads these releases, so asset names must stay
-# microg-re-tv-<version>.apk and microg-re-tv-<version>-noicon.apk.
+# Builds, signs and publishes the MicroG RE TV universal APK as a GitHub release. The asset is
+# always named microg-re-tv.apk so the newest build stays reachable at the stable URL
+# https://github.com/johnneerdael/MicroG-RE-TV/releases/latest/download/microg-re-tv.apk.
+# The in-app updater (AppUpdater) reads the version from the release tag, not the asset name.
 on:
   workflow_dispatch:
 
@@ -43,34 +44,28 @@ jobs:
           test -n "$KEYSTORE_B64" || { echo "::error::KEYSTORE_B64 secret is not set"; exit 1; }
           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
 
-      - name: "Build universal APKs"
+      - name: "Build universal APK"
         run: |
           mkdir -p unsigned
           ./gradlew --no-daemon :play-services-core:assembleDefaultRelease -PtvBuild="$TV_BUILD"
-          cp play-services-core/build/outputs/apk/default/release/*.apk unsigned/icon.apk
-          ./gradlew --no-daemon :play-services-core:assembleDefaultRelease -PtvBuild="$TV_BUILD" -PnoIcon=true
-          cp play-services-core/build/outputs/apk/default/release/*.apk unsigned/noicon.apk
+          cp play-services-core/build/outputs/apk/default/release/*.apk unsigned/microg-re-tv.apk
 
-      - name: "Sign APKs"
+      - name: "Sign APK"
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEYSTORE_ENTRY_ALIAS: ${{ secrets.KEYSTORE_ENTRY_ALIAS }}
           KEYSTORE_ENTRY_PASSWORD: ${{ secrets.KEYSTORE_ENTRY_PASSWORD }}
         run: |
           BUILD_TOOLS="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
-          VERSION=$("$BUILD_TOOLS/aapt" dump badging unsigned/icon.apk | grep -oP "versionName='\K[^']+")
+          VERSION=$("$BUILD_TOOLS/aapt" dump badging unsigned/microg-re-tv.apk | grep -oP "versionName='\K[^']+")
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           mkdir -p dist
-          for variant in icon noicon; do
-            name="microg-re-tv-$VERSION"
-            [ "$variant" = noicon ] && name="$name-noicon"
-            "$BUILD_TOOLS/zipalign" -f -p 4 "unsigned/$variant.apk" "unsigned/$variant-aligned.apk"
-            "$BUILD_TOOLS/apksigner" sign \
-              --ks "$RUNNER_TEMP/release.jks" --ks-pass env:KEYSTORE_PASSWORD \
-              --ks-key-alias "$KEYSTORE_ENTRY_ALIAS" --key-pass env:KEYSTORE_ENTRY_PASSWORD \
-              --out "dist/$name.apk" "unsigned/$variant-aligned.apk"
-            "$BUILD_TOOLS/apksigner" verify --print-certs "dist/$name.apk" | head -3
-          done
+          "$BUILD_TOOLS/zipalign" -f -p 4 unsigned/microg-re-tv.apk unsigned/microg-re-tv-aligned.apk
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks "$RUNNER_TEMP/release.jks" --ks-pass env:KEYSTORE_PASSWORD \
+            --ks-key-alias "$KEYSTORE_ENTRY_ALIAS" --key-pass env:KEYSTORE_ENTRY_PASSWORD \
+            --out dist/microg-re-tv.apk unsigned/microg-re-tv-aligned.apk
+          "$BUILD_TOOLS/apksigner" verify --print-certs dist/microg-re-tv.apk | head -3
           rm -f "$RUNNER_TEMP/release.jks"
           ls -lh dist/
 
@@ -85,8 +80,8 @@ jobs:
           body: |
             MicroG RE for Android TV: leanback launcher entry and full D-pad remote support.
 
-            - `microg-re-tv-${{ env.VERSION }}.apk`: universal, launcher icon shown
-            - `microg-re-tv-${{ env.VERSION }}-noicon.apk`: universal, launcher icon hidden (open it from the system app info)
+            Download `microg-re-tv.apk` (universal). The newest release is always available at
+            https://github.com/johnneerdael/MicroG-RE-TV/releases/latest/download/microg-re-tv.apk
 
-            Both are signed with the MicroG RE TV key, so they cannot be installed over upstream MicroG RE builds; uninstall those first.
-          files: dist/*.apk
+            It is signed with the MicroG RE TV key, so it cannot be installed over upstream MicroG RE builds; uninstall those first.
+          files: dist/microg-re-tv.apk

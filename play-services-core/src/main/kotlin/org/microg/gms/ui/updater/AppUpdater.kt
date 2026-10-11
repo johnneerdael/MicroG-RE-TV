@@ -68,8 +68,8 @@ object AppUpdater {
     /** Intent extra used by the update notification to force the update prompt. */
     const val EXTRA_CHECK_UPDATE = "extra_check_update"
 
-    // Android TV fork: updates come from its own releases, which only ship universal APKs
-    // (microg-re-tv-<version>.apk and microg-re-tv-<version>-noicon.apk).
+    // Android TV fork: updates come from its own releases, which ship a single universal
+    // microg-re-tv.apk (version taken from the release tag).
     private const val RELEASES_REPO = "johnneerdael/MicroG-RE-TV"
     private const val RELEASES_URL = "https://api.github.com/repos/$RELEASES_REPO/releases"
     private const val RELEASE_DOWNLOAD_URL = "https://github.com/$RELEASES_REPO/releases"
