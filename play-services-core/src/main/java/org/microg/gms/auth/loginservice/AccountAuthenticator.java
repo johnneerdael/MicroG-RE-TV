@@ -10,11 +10,14 @@ import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.accounts.NetworkErrorException;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
+
+import androidx.core.app.PendingIntentCompat;
 
 import com.google.android.gms.common.internal.CertData;
 import org.microg.gms.accountaction.ErrorResolverKt;
@@ -25,6 +28,7 @@ import org.microg.gms.auth.login.LoginActivity;
 import org.microg.gms.common.NotOkayException;
 import org.microg.gms.common.PackageUtils;
 import org.microg.gms.auth.AuthResponse;
+import org.microg.gms.ui.UnpackingRedirectActivity;
 import org.microg.gms.utils.PackageManagerUtilsKt;
 
 import java.io.IOException;
@@ -138,7 +142,7 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
                 i.putExtra(KEY_ACCOUNT_NAME, account.name);
                 i.putExtra(KEY_OVERRIDE_PACKAGE, overridePackage);
                 i.putExtra(KEY_OVERRIDE_CERTIFICATE, overrideCert.getBytes());
-                result.putParcelable(KEY_INTENT, i);
+                result.putParcelable(KEY_INTENT, wrapForCaller(i, app, account, authTokenType));
                 return result;
             }
         } else {
@@ -169,7 +173,7 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
                 } catch (Exception e) {
                     Log.w(TAG, "Can't decode consent data: ", e);
                 }
-                result.putParcelable(KEY_INTENT, i);
+                result.putParcelable(KEY_INTENT, wrapForCaller(i, app, account, authTokenType));
                 return result;
             }
         } catch (ReauthenticationRequiredException e) {
@@ -203,6 +207,18 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
             }
             throw new IOException(e);
         }
+    }
+
+    /**
+     * The permission prompts aren't exported, so the calling app can't start them itself. Hand it
+     * the redirect activity carrying an immutable PendingIntent to the prompt instead, as
+     * AuthManagerServiceImpl does. One PendingIntent per app, account and token type, so
+     * concurrent requests don't overwrite each other's extras.
+     */
+    private Intent wrapForCaller(Intent target, String app, Account account, String authTokenType) {
+        int requestCode = (app + ":" + account.name + ":" + authTokenType).hashCode();
+        PendingIntent pi = PendingIntentCompat.getActivity(context, requestCode, target, PendingIntent.FLAG_UPDATE_CURRENT, false);
+        return pi != null ? UnpackingRedirectActivity.createIntent(context, pi) : target;
     }
 
     private Bundle createReAuthIntentResult(AccountAuthenticatorResponse response, Account account, Bundle options) {
