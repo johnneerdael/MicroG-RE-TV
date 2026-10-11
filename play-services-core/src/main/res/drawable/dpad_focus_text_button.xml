@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ SPDX-FileCopyrightText: 2026 microG Project Team
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<!-- Borderless button background with a visible focus ring for D-pad navigation (Android TV) -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="?android:attr/colorControlHighlight">
+    <item android:id="@android:id/mask">
+        <shape>
+            <corners android:radius="8dp" />
+            <solid android:color="@android:color/white" />
+        </shape>
+    </item>
+    <item>
+        <selector>
+            <item android:state_focused="true">
+                <shape>
+                    <corners android:radius="8dp" />
+                    <stroke
+                        android:width="3dp"
+                        android:color="?android:attr/colorAccent" />
+                </shape>
+            </item>
+        </selector>
+    </item>
+</ripple>
