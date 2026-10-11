@@ -23,6 +23,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.R
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
 import org.json.JSONObject
@@ -129,6 +130,9 @@ class GameChangeAccountFragment : Fragment() {
 
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(dialogView)
+        // Fully expanded: a D-pad cannot drag a collapsed sheet open to reach its buttons
+        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        dialog.behavior.skipCollapsed = true
         dialog.setOnDismissListener {
             lifecycleScope.launchWhenStarted { loadPlayedGames() }
         }

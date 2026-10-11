@@ -82,8 +82,11 @@ public abstract class AssistantActivity extends AppCompatActivity {
         if (text == null) {
             findViewById(R.id.next_button).setVisibility(View.GONE);
         } else {
-            findViewById(R.id.next_button).setVisibility(View.VISIBLE);
-            ((Button) findViewById(R.id.next_button)).setText(text);
+            Button nextButton = findViewById(R.id.next_button);
+            nextButton.setVisibility(View.VISIBLE);
+            nextButton.setText(text);
+            // D-pad (Android TV): start on the primary action, not on the toolbar's back button
+            if (!nextButton.isInTouchMode()) nextButton.requestFocus();
         }
     }
 

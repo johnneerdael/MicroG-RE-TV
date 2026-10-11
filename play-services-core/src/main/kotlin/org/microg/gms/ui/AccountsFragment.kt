@@ -7,6 +7,7 @@ package org.microg.gms.ui
 
 import android.accounts.Account
 import android.accounts.AccountManager
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
@@ -56,6 +57,8 @@ import java.util.Locale
 const val PREFCAT_ACCOUNTS = "prefcat_current_accounts"
 const val PREF_PRIVACY = "pref_privacy"
 const val PREF_MANAGE_ACCOUNTS = "pref_manage_accounts"
+const val PREFCAT_ADD_ACCOUNT = "prefcat_add_account"
+const val PREF_ADD_ACCOUNT = "pref_add_account"
 
 class AccountsFragment : PreferenceFragmentCompat() {
 
@@ -100,6 +103,11 @@ class AccountsFragment : PreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.preferences_accounts)
+        // Android TV has no account sync settings screen
+        if (Intent(Settings.ACTION_SYNC_SETTINGS).resolveActivity(requireContext().packageManager) == null) {
+            findPreference<Preference>(PREF_MANAGE_ACCOUNTS)?.isVisible = false
+            findPreference<Preference>(PREF_PRIVACY)?.layoutResource = R.layout.preference_material_single
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -111,7 +119,7 @@ class AccountsFragment : PreferenceFragmentCompat() {
 
     override fun onStart() {
         super.onStart()
-        fab.show()
+        if (useFab) fab.show()
     }
 
     override fun onStop() {
@@ -122,10 +130,19 @@ class AccountsFragment : PreferenceFragmentCompat() {
     override fun onResume() {
         super.onResume()
         updateSettings()
-        fab.show()
+        if (useFab) fab.show()
     }
 
+    // A D-pad cannot reach the floating button, so leanback devices get a list entry instead.
+    private val useFab: Boolean
+        get() = !requireContext().isLeanbackDevice
+
     private fun setupPreferenceListeners() {
+        findPreference<PreferenceCategory>(PREFCAT_ADD_ACCOUNT)?.isVisible = !useFab
+        findPreference<Preference>(PREF_ADD_ACCOUNT)?.setOnPreferenceClickListener {
+            startActivity(Intent(requireContext(), LoginActivity::class.java))
+            true
+        }
         findPreference<Preference>(PREF_PRIVACY)?.setOnPreferenceClickListener {
             findNavController().navigate(requireContext(), R.id.privacyFragment)
             true
@@ -139,7 +156,7 @@ class AccountsFragment : PreferenceFragmentCompat() {
             true
         }
         findPreference<Preference>("pref_accounts_import")?.setOnPreferenceClickListener {
-            importAccountsLauncher.launch(arrayOf("application/json", "application/octet-stream", "text/*"))
+            launchDocumentPicker { importAccountsLauncher.launch(arrayOf("application/json", "application/octet-stream", "text/*")) }
             true
         }
         findPreference<Preference>("pref_manage_history")?.setOnPreferenceClickListener {
@@ -162,7 +179,7 @@ class AccountsFragment : PreferenceFragmentCompat() {
             .setMessage(R.string.pref_accounts_backup_warning_message)
             .setPositiveButton(R.string.button_backup_accounts) { _, _ ->
                 val timestamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())
-                exportAccountsLauncher.launch("microg-accounts-$timestamp.json")
+                launchDocumentPicker { exportAccountsLauncher.launch("microg-accounts-$timestamp.json") }
             }
             .setNegativeButton(R.string.dialog_cancel_button, null)
             .show()
@@ -275,6 +292,8 @@ class AccountsFragment : PreferenceFragmentCompat() {
         }
         buttonCancel.setOnClickListener { dialog.dismiss() }
         dialog.show()
+        // D-pad (Android TV): start on the safe choice
+        if (!buttonCancel.isInTouchMode) buttonCancel.requestFocus()
     }
 
     private fun removeAccount(account: Account) {
@@ -326,6 +345,16 @@ class AccountsFragment : PreferenceFragmentCompat() {
                 }
             }
         })
+    }
+
+    // Many Android TV builds ship without a document picker (DocumentsUI).
+    private fun launchDocumentPicker(launch: () -> Unit) {
+        try {
+            launch()
+        } catch (e: ActivityNotFoundException) {
+            Log.w(tag, "No document picker available", e)
+            view?.let { Snackbar.make(it, R.string.snackbar_no_document_picker, Snackbar.LENGTH_LONG).show() }
+        }
     }
 
     private fun startActivityIntent(intent: Intent) {

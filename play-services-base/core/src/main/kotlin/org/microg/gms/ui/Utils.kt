@@ -59,6 +59,13 @@ val Context.systemAnimationsEnabled: Boolean
         return duration != 0f && transition != 0f
     }
 
+/**
+ * Android TV / leanback device: navigated with a D-pad remote, usually without a touchscreen,
+ * and always mains powered.
+ */
+val Context.isLeanbackDevice: Boolean
+    get() = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+
 fun Context.buildAlertDialog() = try {
     // Try material design first
     MaterialAlertDialogBuilder(this)

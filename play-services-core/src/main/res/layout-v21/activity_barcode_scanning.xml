@@ -13,7 +13,9 @@
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:layout_gravity="start"
+        android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@android:string/cancel"
+        android:focusable="true"
         android:scaleType="centerCrop"
         android:layout_margin="20dp"
         android:src="@drawable/ic_close_btn" />

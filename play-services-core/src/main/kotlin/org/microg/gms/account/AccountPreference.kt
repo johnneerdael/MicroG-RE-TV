@@ -44,17 +44,31 @@ class AccountPreference(context: Context) : Preference(context) {
         emailView?.text = summary
         avatarView?.setImageDrawable(accountAvatar)
 
+        // The remove action is only reachable while revealed, so D-pad focus never lands on a
+        // hidden button. Without a touchscreen (Android TV) there is no swipe: OK on the card
+        // reveals the action and moves focus onto it, moving focus away hides it again.
+        actionRemove?.isFocusable = layout.swipeState != SwipeableListItem.STATE_CLOSED
+
         card?.setOnClickListener {
-            layout.swipeState = if (layout.swipeState == SwipeableListItem.STATE_CLOSED) {
-                SwipeableListItem.STATE_OPEN
-            } else {
-                SwipeableListItem.STATE_CLOSED
+            val open = layout.swipeState == SwipeableListItem.STATE_CLOSED
+            layout.swipeState = if (open) SwipeableListItem.STATE_OPEN else SwipeableListItem.STATE_CLOSED
+            actionRemove?.isFocusable = open
+            if (open && !it.isInTouchMode) actionRemove?.requestFocus()
+        }
+
+        actionRemove?.setOnFocusChangeListener { view, hasFocus ->
+            if (!hasFocus && !view.isInTouchMode) {
+                layout.swipeState = SwipeableListItem.STATE_CLOSED
+                view.isFocusable = false
             }
         }
 
         actionRemove?.setOnClickListener {
             onRemoveListener?.invoke()
             layout.swipeState = SwipeableListItem.STATE_CLOSED
+            // Hand focus back to the card first, or Android moves it to the toolbar's back button
+            if (it.hasFocus()) card?.requestFocus()
+            it.isFocusable = false
         }
     }
 }

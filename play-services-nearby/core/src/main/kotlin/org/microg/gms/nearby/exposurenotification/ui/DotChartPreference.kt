@@ -34,6 +34,8 @@ class DotChartPreference : Preference {
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
         chart = holder.itemView as? DotChartView ?: holder.findViewById(R.id.dot_chart) as DotChartView
+        // Preference.onBindViewHolder makes non-selectable items unfocusable; keep the chart reachable by D-pad.
+        chart.isFocusable = true
         chart.data = data
     }
 

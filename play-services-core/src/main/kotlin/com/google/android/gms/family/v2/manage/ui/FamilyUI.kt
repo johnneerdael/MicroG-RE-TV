@@ -24,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -128,7 +129,12 @@ fun FamilyActivityScreen(
 
     LaunchedEffect(uiState.isError) {
         if (uiState.isError) {
-            snackHostState.showSnackbar(context.getString(R.string.family_management_load_error))
+            // Indefinite so the Retry action stays reachable with a D-pad (Android TV); the snackbar is
+            // dismissed by Retry or automatically when this effect is cancelled because isError changed.
+            snackHostState.showSnackbar(
+                message = context.getString(R.string.family_management_load_error),
+                duration = SnackbarDuration.Indefinite
+            )
         }
     }
 }

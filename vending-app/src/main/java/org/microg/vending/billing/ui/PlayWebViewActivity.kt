@@ -11,6 +11,7 @@ import android.util.Log
 import android.view.View
 import android.view.Window
 import android.webkit.WebView
+import org.microg.gms.ui.DpadWebView
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import androidx.activity.ComponentActivity
@@ -78,7 +79,7 @@ class PlayWebViewActivity : ComponentActivity() {
             }
             isIndeterminate = true
         })
-        webView = WebView(this).apply {
+        webView = DpadWebView(this).apply {
             layoutParams = RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.MATCH_PARENT,
                 RelativeLayout.LayoutParams.MATCH_PARENT

@@ -70,6 +70,8 @@
             android:text="@string/credentials_assisted_cancel"
             android:visibility="gone"
             android:textColor="?colorPrimary"
+            android:background="?attr/selectableItemBackground"
+            android:focusable="true"
             android:paddingVertical="4dp"
             android:paddingHorizontal="10dp"
             android:layout_height="wrap_content"/>

@@ -210,7 +210,9 @@ class SettingsFragment : ResourceSettingsFragment() {
     private fun updateBatteryOptimizationPreference() {
         val ctx = context ?: return
         findPreference<Preference>(PREF_IGNORE_BATTERY_OPTIMIZATION)?.apply {
-            isVisible = !ctx.isIgnoringBatteryOptimizations
+            // TVs are mains powered, so Doze/App Standby never apply, and Android TV only ships a
+            // no-op stub for the request dialog: the prompt could never be resolved there.
+            isVisible = !ctx.isIgnoringBatteryOptimizations && !ctx.isLeanbackDevice
             setOnPreferenceClickListener {
                 requestIgnoringBatteryOptimizations()
                 true
@@ -237,6 +239,9 @@ class SettingsFragment : ResourceSettingsFragment() {
         findPreference<SwitchPreferenceCompat>(PREF_HIDE_LAUNCHER_ICON)?.apply {
             isPersistent = false
             isChecked = isLauncherIconHidden()
+            // The same entry is the only way into microG from an Android TV home screen, so on TV
+            // only offer bringing a hidden icon back, never hiding it.
+            isVisible = isChecked || !requireContext().isLeanbackDevice
         }
     }
 

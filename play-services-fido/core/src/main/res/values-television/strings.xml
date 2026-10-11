@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ SPDX-FileCopyrightText: 2026 microG Project Team
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<!-- Android TV wording: the UI is driven by a D-pad remote, there is nothing to tap or swipe. -->
+<resources>
+    <string name="fido_ble_permission_permanently_denied">Bluetooth permission has been permanently denied. To enable cross-device authentication:\n\n1. Select “Go to settings”\n2. Find Permissions / App permissions\n3. Enable Location (or “Nearby devices” on Android 12+)\n4. Return to the app and try again</string>
+</resources>

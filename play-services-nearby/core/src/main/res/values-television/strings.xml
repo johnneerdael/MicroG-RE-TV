@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ SPDX-FileCopyrightText: 2026 microG Project Team
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<!-- Android TV wording: the UI is driven by a D-pad remote, there is nothing to tap or swipe. -->
+<resources>
+    <string name="pref_exposure_error_nearby_not_granted_description">Select to grant required permissions to Exposure Notifications</string>
+</resources>

@@ -1,0 +1,92 @@
+name: Release (Android TV)
+
+# Builds, signs and publishes the MicroG RE TV universal APKs (launcher icon and no-icon) as a
+# GitHub release. The in-app updater (AppUpdater) reads these releases, so asset names must stay
+# microg-re-tv-<version>.apk and microg-re-tv-<version>-noicon.apk.
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: "Release build"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      # The fork carries no upstream version tags; the version name is set in build.gradle.
+      GRADLE_MICROG_VERSION_WITHOUT_GIT: 1
+      # Each run gets a higher version (7.2.1.<run>) so installed builds see it as an update.
+      TV_BUILD: ${{ github.run_number }}
+
+    steps:
+      - name: "Free disk space"
+        run: |
+          sudo rm -rf /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/go
+          df -h
+
+      - name: "Checkout sources"
+        uses: actions/checkout@v7
+
+      - name: "Setup Java"
+        uses: actions/setup-java@v6
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: "Setup Gradle"
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: "Decode signing key"
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          test -n "$KEYSTORE_B64" || { echo "::error::KEYSTORE_B64 secret is not set"; exit 1; }
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: "Build universal APKs"
+        run: |
+          mkdir -p unsigned
+          ./gradlew --no-daemon :play-services-core:assembleDefaultRelease -PtvBuild="$TV_BUILD"
+          cp play-services-core/build/outputs/apk/default/release/*.apk unsigned/icon.apk
+          ./gradlew --no-daemon :play-services-core:assembleDefaultRelease -PtvBuild="$TV_BUILD" -PnoIcon=true
+          cp play-services-core/build/outputs/apk/default/release/*.apk unsigned/noicon.apk
+
+      - name: "Sign APKs"
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEYSTORE_ENTRY_ALIAS: ${{ secrets.KEYSTORE_ENTRY_ALIAS }}
+          KEYSTORE_ENTRY_PASSWORD: ${{ secrets.KEYSTORE_ENTRY_PASSWORD }}
+        run: |
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          VERSION=$("$BUILD_TOOLS/aapt" dump badging unsigned/icon.apk | grep -oP "versionName='\K[^']+")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          mkdir -p dist
+          for variant in icon noicon; do
+            name="microg-re-tv-$VERSION"
+            [ "$variant" = noicon ] && name="$name-noicon"
+            "$BUILD_TOOLS/zipalign" -f -p 4 "unsigned/$variant.apk" "unsigned/$variant-aligned.apk"
+            "$BUILD_TOOLS/apksigner" sign \
+              --ks "$RUNNER_TEMP/release.jks" --ks-pass env:KEYSTORE_PASSWORD \
+              --ks-key-alias "$KEYSTORE_ENTRY_ALIAS" --key-pass env:KEYSTORE_ENTRY_PASSWORD \
+              --out "dist/$name.apk" "unsigned/$variant-aligned.apk"
+            "$BUILD_TOOLS/apksigner" verify --print-certs "dist/$name.apk" | head -3
+          done
+          rm -f "$RUNNER_TEMP/release.jks"
+          ls -lh dist/
+
+      - name: "Publish release"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: MicroG RE TV ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          generate_release_notes: true
+          body: |
+            MicroG RE for Android TV: leanback launcher entry and full D-pad remote support.
+
+            - `microg-re-tv-${{ env.VERSION }}.apk`: universal, launcher icon shown
+            - `microg-re-tv-${{ env.VERSION }}-noicon.apk`: universal, launcher icon hidden (open it from the system app info)
+
+            Both are signed with the MicroG RE TV key, so they cannot be installed over upstream MicroG RE builds; uninstall those first.
+          files: dist/*.apk

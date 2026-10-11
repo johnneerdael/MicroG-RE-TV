@@ -10,7 +10,9 @@
         android:id="@+id/material_card_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardBackgroundColor="?attr/colorSurfaceContainer">
+        app:cardBackgroundColor="?attr/colorSurfaceContainer"
+        app:strokeColor="@color/dpad_focus_stroke"
+        app:strokeWidth="3dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"

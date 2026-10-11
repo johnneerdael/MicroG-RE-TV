@@ -13,6 +13,7 @@ import android.os.Build.VERSION.SDK_INT
 import android.text.format.DateFormat
 import android.text.format.DateUtils
 import android.util.AttributeSet
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import org.microg.gms.nearby.exposurenotification.ExposureScanSummary
@@ -30,6 +31,11 @@ class DotChartView : View {
     constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
     constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs)
     constructor(context: Context?) : super(context)
+
+    init {
+        // D-pad support (Android TV): the chart can be focused and the highlighted cell moved with the arrow keys.
+        isFocusable = true
+    }
 
     var data: Set<ExposureScanSummary>? = null
         @SuppressLint("SimpleDateFormat")
@@ -100,6 +106,8 @@ class DotChartView : View {
     private fun <T> List<T>.relativePosition(element: T): Double? = indexOf(element).takeIf { it >= 0 }?.toDouble()?.let { it / size.toDouble() }
 
     private var focusPoint: PointF? = null
+    // Cell (day to hour) highlighted via D-pad; translated into focusPoint in onDraw.
+    private var keySelection: Pair<Int, Int>? = null
     override fun onDraw(canvas: Canvas) {
         if (data == null) data = emptySet()
         val d = resources.displayMetrics.scaledDensity
@@ -124,6 +132,13 @@ class DotChartView : View {
         val distWidth = (width - innerPadding * 23 - paddingLeft - paddingRight - legendLeft).toDouble()
         val perHeight = distHeight / 15.0
         val perWidth = distWidth / 24.0
+
+        keySelection?.let { (day, hour) ->
+            focusPoint = PointF(
+                (hour * (perWidth + innerPadding) + paddingLeft + legendLeft + perWidth / 2).toFloat(),
+                (day * (perHeight + innerPadding) + paddingTop + perHeight / 2).toFloat()
+            )
+        }
 
         val maxValue = displayDataList.last()
         val accentColor = context.resolveColor(androidx.appcompat.R.attr.colorAccent) ?: 0
@@ -194,6 +209,20 @@ class DotChartView : View {
             canvas.drawText(strRecords, (subLeft + (perWidth + innerPadding) * 4 + 16 * d + fontTempRect.width() + perWidth).toFloat(), (subTop + perHeight / 2.0 + fontTempRect.height() / 2.0).toFloat(), fontPaint)
         }
 
+        if (isFocused) {
+            // Focus indicator around the chart grid
+            drawPaint.style = Paint.Style.STROKE
+            drawPaint.color = accentColor
+            canvas.drawRect(
+                (paddingLeft + legendLeft - innerPadding).toFloat(),
+                (paddingTop - innerPadding).toFloat(),
+                (paddingLeft + legendLeft + 24 * (perWidth + innerPadding)).toFloat(),
+                (paddingTop + 15 * (perHeight + innerPadding)).toFloat(),
+                drawPaint
+            )
+            drawPaint.style = Paint.Style.FILL
+        }
+
         if (focusHour != -1 && SDK_INT >= 23) {
             val floatingColor = context.resolveColor(androidx.appcompat.R.attr.colorBackgroundFloating) ?: 0
             val line1 = "${displayData[focusDay]?.first}, $focusHour:00"
@@ -260,7 +289,71 @@ class DotChartView : View {
 
     fun unfocus() {
         focusPoint = null
+        keySelection = null
         invalidate()
+    }
+
+    private fun isSelectableCell(day: Int, hour: Int): Boolean {
+        if (day !in 0 until 15 || hour !in 0 until 24) return false
+        val value = displayData[day]?.second?.get(hour)
+        return value == null || value >= 0
+    }
+
+    private fun findSelectableCell(day: Int, hour: Int, dayStep: Int, hourStep: Int): Pair<Int, Int>? {
+        var d = day + dayStep
+        var h = hour + hourStep
+        while (d in 0 until 15 && h in 0 until 24) {
+            if (isSelectableCell(d, h)) return d to h
+            d += dayStep
+            h += hourStep
+        }
+        return null
+    }
+
+    private fun initialKeySelection(): Pair<Int, Int>? {
+        for (day in 14 downTo 0) for (hour in 23 downTo 0) if (isSelectableCell(day, hour)) return day to hour
+        return null
+    }
+
+    private fun selectCell(cell: Pair<Int, Int>) {
+        removeCallbacks(removeFocusPoint)
+        keySelection = cell
+        invalidate()
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        val selection = keySelection
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                val hourStep = if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) -1 else 1
+                val next = if (selection == null) initialKeySelection() else findSelectableCell(selection.first, selection.second, 0, hourStep)
+                if (next != null) {
+                    selectCell(next)
+                    return true
+                }
+            }
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> if (selection != null) {
+                // Only move between days once a cell is selected; at the edge, let focus leave the chart.
+                val dayStep = if (keyCode == KeyEvent.KEYCODE_DPAD_UP) -1 else 1
+                val next = findSelectableCell(selection.first, selection.second, dayStep, 0)
+                if (next != null) {
+                    selectCell(next)
+                    return true
+                }
+                unfocus()
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
+        if (!gainFocus) {
+            removeCallbacks(removeFocusPoint)
+            unfocus()
+        } else {
+            invalidate()
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -271,6 +364,7 @@ class DotChartView : View {
             }
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_MOVE -> {
                 removeCallbacks(removeFocusPoint)
+                keySelection = null
                 focusPoint = PointF(event.x, event.y)
                 invalidate()
                 return true

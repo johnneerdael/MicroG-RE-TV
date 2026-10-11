@@ -189,8 +189,10 @@ public abstract class AbstractSelfCheckFragment extends Fragment {
                     resView.setVisibility(VISIBLE);
                     resView.setText(HtmlCompat.fromHtml(resolution, HtmlCompat.FROM_HTML_MODE_COMPACT));
                     if (resolver != null) {
-                        entry.setClickable(true);
-                        entry.setOnClickListener(v -> resolver.tryResolve(AbstractSelfCheckFragment.this));
+                        // The card is the click target so it can also take D-pad focus and show it
+                        View card = entry.findViewById(R.id.material_card_view);
+                        card.setFocusable(true);
+                        card.setOnClickListener(v -> resolver.tryResolve(AbstractSelfCheckFragment.this));
                     }
                 }
 

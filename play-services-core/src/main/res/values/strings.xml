@@ -214,6 +214,7 @@ Please set up a password, PIN, or pattern lock screen."</string>
     <string name="snackbar_accounts_restored">Restored %1$d account(s)</string>
     <string name="snackbar_accounts_export_failed">Backup failed</string>
     <string name="snackbar_accounts_import_failed">Restore failed</string>
+    <string name="snackbar_no_document_picker">No file picker is available on this device</string>
     <string name="prefcat_youtube_activity">YouTube Activity</string>
     <string name="pref_manage_all_history">Manage all history</string>
     <string name="pref_data_in_youtube">Your data in YouTube</string>

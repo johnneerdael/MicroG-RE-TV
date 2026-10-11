@@ -19,6 +19,7 @@ import android.view.View
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient.FileChooserParams
 import android.webkit.WebView
+import org.microg.gms.ui.DpadWebView
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.RelativeLayout.LayoutParams.MATCH_PARENT
@@ -253,7 +254,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 isIndeterminate = true
             }
-            webView = WebView(this).apply {
+            webView = DpadWebView(this).apply {
                 id = View.generateViewId()
                 layoutParams = RelativeLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT).apply {
                     addRule(RelativeLayout.BELOW, toolbar.id)

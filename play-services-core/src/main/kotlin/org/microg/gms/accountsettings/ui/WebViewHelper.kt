@@ -60,6 +60,8 @@ class WebViewHelper(private val activity: MainActivity, private val webView: Web
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 webView.visibility = View.VISIBLE
+                // Let a D-pad remote reach the page without an extra key press
+                if (!webView.hasFocus()) webView.requestFocus(View.FOCUS_DOWN)
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {

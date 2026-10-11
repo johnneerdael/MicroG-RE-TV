@@ -15,7 +15,10 @@ import android.text.style.StyleSpan
 import android.text.style.URLSpan
 import android.text.style.UnderlineSpan
 import androidx.annotation.StringRes
+import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +27,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -46,6 +55,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
 import androidx.core.text.getSpans
 
@@ -163,9 +173,26 @@ fun HtmlText(
     val urls = remember(layoutResult, annotatedString) {
         annotatedString.getStringAnnotations("url", 0, annotatedString.lastIndex)
     }
+    val focused = remember { mutableStateOf(false) }
 
     Text(
         modifier = modifier.then(if (clickable) Modifier
+            // D-pad / keyboard support (Android TV): the text is focusable and OK/Enter opens the first link.
+            .onFocusChanged { focused.value = it.isFocused }
+            .then(
+                if (focused.value) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                else Modifier
+            )
+            .onKeyEvent { event ->
+                val isActivationKey = event.key == Key.DirectionCenter || event.key == Key.Enter || event.key == Key.NumPadEnter
+                if (!isActivationKey || urls.isEmpty()) return@onKeyEvent false
+                if (event.type == KeyEventType.KeyUp) {
+                    val url = urls[0].item
+                    onUriClick?.let { it(url) } ?: uriHandler.openUri(url)
+                }
+                true
+            }
+            .focusable()
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { pos ->
                     layoutResult.value?.let { layoutResult ->

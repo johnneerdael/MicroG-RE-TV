@@ -68,7 +68,12 @@ object AppUpdater {
     /** Intent extra used by the update notification to force the update prompt. */
     const val EXTRA_CHECK_UPDATE = "extra_check_update"
 
-    private const val RELEASES_URL = "https://api.github.com/repos/MorpheApp/MicroG-RE/releases"
+    // Android TV fork: updates come from its own releases, which only ship universal APKs
+    // (microg-re-tv-<version>.apk and microg-re-tv-<version>-noicon.apk).
+    private const val RELEASES_REPO = "johnneerdael/MicroG-RE-TV"
+    private const val RELEASES_URL = "https://api.github.com/repos/$RELEASES_REPO/releases"
+    private const val RELEASE_DOWNLOAD_URL = "https://github.com/$RELEASES_REPO/releases"
+    private const val ASSET_PREFIX = "microg-re-tv"
     private const val UPDATE_URL = "$RELEASES_URL/latest"
     private const val PREFS_NAME = "org.microg.gms_updater"
     private const val PREFS_IGNORED_VERSION = "ignored_version"
@@ -243,11 +248,10 @@ object AppUpdater {
             // 2. Direct GitHub release asset URL fallback
             val cleanVersion = BuildConfig.VERSION_NAME.trim().removePrefix("v").removePrefix("V")
             val tag = "v$cleanVersion"
-            val isArm64 = Build.SUPPORTED_ABIS.any { it == "arm64-v8a" }
-            val assetFileName = if (isArm64) "microg-$cleanVersion-noicon-arm64-v8a.apk" else "microg-$cleanVersion-noicon.apk"
+            val assetFileName = "$ASSET_PREFIX-$cleanVersion-noicon.apk"
 
-            val directUrlTag = "https://github.com/MorpheApp/MicroG-RE/releases/download/$tag/$assetFileName"
-            val directUrlLatest = "https://github.com/MorpheApp/MicroG-RE/releases/latest/download/$assetFileName"
+            val directUrlTag = "$RELEASE_DOWNLOAD_URL/download/$tag/$assetFileName"
+            val directUrlLatest = "$RELEASE_DOWNLOAD_URL/latest/download/$assetFileName"
 
             if (!candidateUrls.contains(directUrlTag)) candidateUrls.add(directUrlTag)
             if (!candidateUrls.contains(directUrlLatest)) candidateUrls.add(directUrlLatest)
@@ -1057,12 +1061,13 @@ object AppUpdater {
         downloadAndInstallNamedVariant(
             activity,
             titleRes = R.string.abi_mismatch_downloading_title,
-            preferredNameContains = listOf("armeabi-v7a"),
+            preferredNameContains = emptyList(),
             preferNoicon = activity.resources.getBoolean(R.bool.hide_launcher_icon_available),
+            // The TV releases only ship universal APKs, which include the armeabi-v7a libraries
             directFileNameBuilder = { version, noicon ->
-                if (noicon) "microg-$version-noicon-armeabi-v7a.apk"
-                else "microg-$version-armeabi-v7a.apk"
-            }
+                if (noicon) "$ASSET_PREFIX-$version-noicon.apk" else "$ASSET_PREFIX-$version.apk"
+            },
+            requireUniversalName = true
         )
     }
 
@@ -1075,7 +1080,7 @@ object AppUpdater {
             preferredNameContains = emptyList(),
             preferNoicon = activity.resources.getBoolean(R.bool.hide_launcher_icon_available),
             directFileNameBuilder = { version, noicon ->
-                if (noicon) "microg-$version-noicon.apk" else "microg-$version.apk"
+                if (noicon) "$ASSET_PREFIX-$version-noicon.apk" else "$ASSET_PREFIX-$version.apk"
             },
             requireUniversalName = true
         )
@@ -1160,8 +1165,8 @@ object AppUpdater {
             val tag = "v$cleanVersion"
             val fileName = directFileNameBuilder(cleanVersion, preferNoicon)
             listOf(
-                "https://github.com/MorpheApp/MicroG-RE/releases/download/$tag/$fileName",
-                "https://github.com/MorpheApp/MicroG-RE/releases/latest/download/$fileName"
+                "$RELEASE_DOWNLOAD_URL/download/$tag/$fileName",
+                "$RELEASE_DOWNLOAD_URL/latest/download/$fileName"
             ).forEach { if (!candidateUrls.contains(it)) candidateUrls.add(it) }
 
             val targetFile = File(activity.cacheDir, "$DOWNLOAD_DIR/microg-re-abi-update.apk")

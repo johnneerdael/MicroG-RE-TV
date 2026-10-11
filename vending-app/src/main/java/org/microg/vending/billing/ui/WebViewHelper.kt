@@ -24,10 +24,12 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.webkit.WebResourceErrorCompat
 import androidx.webkit.WebViewClientCompat
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.microg.gms.profile.Build
+import org.microg.gms.ui.DpadWebView
 import org.microg.vending.billing.TAG
 import java.net.URLEncoder
 import java.util.Locale
@@ -144,7 +146,7 @@ class WebViewHelper(
             // to refresh the page and close it by itself.
             var bottomSheetDialog: BottomSheetDialog? = null
             val parentContext = view!!.context
-            val subWebView = WebView(parentContext).apply {
+            val subWebView = DpadWebView(parentContext).apply {
                 settings.apply {
                     javaScriptEnabled = true
                     domStorageEnabled = true
@@ -159,6 +161,7 @@ class WebViewHelper(
                         super.onPageFinished(view, url)
                         Log.d(TAG, "sub_window loaded : $url")
                         visibility = View.VISIBLE
+                        requestFocus(View.FOCUS_DOWN)
                     }
                 }
                 webChromeClient = object : WebChromeClient() {
@@ -172,6 +175,9 @@ class WebViewHelper(
             }
             bottomSheetDialog = BottomSheetDialog(parentContext).apply {
                 setOnDismissListener { subWebView.destroy() }
+                // Fully expanded: a D-pad cannot drag a collapsed sheet open
+                behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                behavior.skipCollapsed = true
             }
             val layout = RelativeLayout(parentContext)
             layout.addView(ProgressBar(parentContext).apply {

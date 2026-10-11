@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.R
 import com.google.android.gms.common.Scopes
 import com.google.android.gms.common.api.Scope
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.squareup.wire.GrpcClient
 import kotlinx.coroutines.Dispatchers
@@ -148,6 +149,9 @@ class GameDeletePlayAccountFragment : Fragment() {
 
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(dialogView)
+        // Fully expanded: a D-pad cannot drag a collapsed sheet open to reach its buttons
+        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        dialog.behavior.skipCollapsed = true
         dialog.show()
 
         if (item != null) {

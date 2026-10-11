@@ -61,6 +61,7 @@
                 android:textSize="13sp"
                 android:textColor="@android:color/white"
                 android:background="@drawable/ic_snapshot_choose_fill"
+                android:focusable="true"
                 app:layout_constraintTop_toBottomOf="@id/snapshot_desc"
                 app:layout_constraintEnd_toEndOf="@id/snapshot_image"/>
 
@@ -75,6 +76,7 @@
                 android:textSize="13sp"
                 android:textColor="@android:color/holo_green_dark"
                 android:background="@drawable/ic_snapshot_choose_stroke"
+                android:focusable="true"
                 app:layout_constraintTop_toBottomOf="@id/snapshot_desc"
                 app:layout_constraintEnd_toStartOf="@id/snapshot_choose_btn"/>
 

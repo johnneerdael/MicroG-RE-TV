@@ -2,6 +2,21 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- Shown instead of the floating "Add account" button on Android TV, where a D-pad
+         cannot reach a button floating outside the scrolling list. -->
+    <PreferenceCategory
+        android:key="prefcat_add_account"
+        android:layout="@layout/preference_material_category_none"
+        app:allowDividerAbove="false"
+        app:isPreferenceVisible="false">
+
+        <Preference
+            android:icon="@drawable/ic_add_account"
+            android:key="pref_add_account"
+            android:layout="@layout/preference_material_single"
+            android:title="@string/auth_add_account" />
+    </PreferenceCategory>
+
     <PreferenceCategory
         android:key="prefcat_current_accounts"
         android:layout="@layout/preference_material_category_small"

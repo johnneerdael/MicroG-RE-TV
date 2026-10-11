@@ -19,6 +19,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import org.microg.gms.ui.DpadWebView
 import android.widget.FrameLayout
 import android.widget.ProgressBar
 import androidx.activity.OnBackPressedCallback
@@ -109,7 +110,7 @@ class FolsomWebFragment : Fragment() {
 
     private fun setupWebView() {
         val container = view as? FrameLayout ?: return
-        val wv = WebView(requireContext()).apply {
+        val wv = DpadWebView(requireContext()).apply {
             isVisible = false
         }
         container.addView(

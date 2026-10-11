@@ -106,7 +106,10 @@ if (!ignoreGit) {
 
 // RE specific version name and code
 def ourGmsVersionCode = 255070218
-def ourGmsVersionName = "7.2.1"
+// Android TV fork: CI passes -PtvBuild=<run number> so every published TV release ranks above the
+// previous one for the in-app updater (e.g. 7.2.1.12)
+def tvBuild = findProperty("tvBuild")
+def ourGmsVersionName = tvBuild ? "7.2.1.$tvBuild" : "7.2.1"
 def ourVendingVersionCode = ourGmsVersionCode
 def ourVendingVersionName = ourGmsVersionName
 

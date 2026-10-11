@@ -62,6 +62,7 @@ import org.microg.gms.checkin.CheckinManager;
 import org.microg.gms.checkin.LastCheckinInfo;
 import org.microg.gms.common.Constants;
 import org.microg.gms.common.HttpFormClient;
+import org.microg.gms.ui.DpadWebView;
 import org.microg.gms.common.Utils;
 import org.microg.gms.people.PeopleManager;
 import org.microg.gms.profile.Build;
@@ -292,7 +293,7 @@ public class LoginActivity extends AssistantActivity {
     }
 
     private static WebView createWebView(Context context) {
-        WebView webView = new WebView(context);
+        WebView webView = new DpadWebView(context);
         if (SDK_INT < 21) {
             webView.setVisibility(VISIBLE);
         } else {
@@ -367,6 +368,14 @@ public class LoginActivity extends AssistantActivity {
         if (scrollView != null) {
             scrollView.setVisibility(visible ? INVISIBLE : View.VISIBLE);
         }
+        // The page covers the native toolbar and buttons; hide them too so D-pad focus can never
+        // land on a control the user cannot see (e.g. the back button, which cancels the login).
+        for (int id : new int[]{R.id.toolbar, R.id.button_container}) {
+            View view = findViewById(id);
+            if (view != null) view.setVisibility(visible ? INVISIBLE : View.VISIBLE);
+        }
+        // Hand focus to the page so a D-pad remote can reach its fields right away
+        if (visible) webView.requestFocus(View.FOCUS_DOWN);
     }
 
     private void showError(int errorRes) {
@@ -793,7 +802,11 @@ public class LoginActivity extends AssistantActivity {
 
         @JavascriptInterface
         public final void showKeyboard() {
-            inputMethodManager.showSoftInput(webView, SHOW_IMPLICIT);
+            Log.d(TAG, "JSBridge: showKeyboard");
+            runOnUiThread(() -> {
+                webView.requestFocus();
+                inputMethodManager.showSoftInput(webView, SHOW_IMPLICIT);
+            });
         }
 
         @JavascriptInterface

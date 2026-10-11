@@ -15,6 +15,8 @@
         android:clickable="true"
         android:focusable="true"
         app:cardBackgroundColor="?attr/colorSecondaryContainer"
+        app:strokeColor="@color/dpad_focus_stroke"
+        app:strokeWidth="3dp"
         app:swipeEnabled="true">
 
         <androidx.constraintlayout.widget.ConstraintLayout

@@ -59,7 +59,7 @@
 
     </LinearLayout>
 
-    <WebView
+    <org.microg.gms.ui.DpadWebView
         android:id="@+id/recaptcha_webview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
